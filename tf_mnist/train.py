@@ -60,9 +60,10 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
     assignments = {}
     for i in range(600):
         if i <= 300:
-            assignments[i] = tf.Variable(0, dtype=tf.int32)
+            # print(type(tf.constant(0, dtype=tf.int32)))
+            assignments[i] = tf.constant(0, dtype=tf.int32)
         else:
-            assignments[i] = tf.Variable(1, dtype=tf.int32)
+            assignments[i] = tf.constant(1, dtype=tf.int32)
 
     # create datasets for training and evaluation
     train_ds, train_size = create_mnist_dataset(batch_size, 'train', sess, assignments)
@@ -73,8 +74,8 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
     # iterator: tf.data.Iterator = tf.data.Iterator.from_structure(train_ds.output_types, train_ds.output_shapes)
     iterator = train_ds.make_initializable_iterator()
     next_batch = iterator.get_next()
-    img_ids, images = next_batch[0]
-    labels = next_batch[1]
+    img_ids, images, labels = next_batch[0]
+    batch_assignments = next_batch[1]
     # batch_assignments = next_batch[1]
 
     print(img_ids.shape)
@@ -138,7 +139,7 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
                         sess.run(assignments[i].assign(1))
                     else:
                         sess.run(assignments[i].assign(0))
-                sess.run(iterator.make_initializer(ds))
+                # sess.run(iterator.make_initializer(ds))
             # if count == 20:
             #     for i in range(600):
             #         if i <= 300:

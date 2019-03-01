@@ -125,7 +125,7 @@ def normalize(images):
     return images
 
 
-def transform_train(pairs, labels):
+def transform_train(pairs, assignments):
     """
     Apply transformations to MNIST data for use in training.
 
@@ -133,7 +133,7 @@ def transform_train(pairs, labels):
     To labels: one-hot encode.
     """
     images = pairs[1]
-    # labels = pairs[2]
+    labels = pairs[2]
     # print(images.shape)
     # print(labels.shape)
     # print(assignments.shape)
@@ -145,7 +145,7 @@ def transform_train(pairs, labels):
     images = normalize(images)
     labels = tf.one_hot(labels, 10)
     labels = tf.squeeze(labels, 1)
-    return ((pairs[0], images), labels)
+    return ((pairs[0], images, labels), assignments)
 
 
 def transform_val(pairs, labels):
@@ -172,8 +172,8 @@ def transform_val(pairs, labels):
 def split_and_merge(assignments, ds):
     print(ds)
     return tf.contrib.data.choose_from_datasets(
-        [ds.filter(lambda x, label: tf.equal(assignments[x[0]], tf.Variable(0, dtype=tf.int32))),
-         ds.filter(lambda x, label: tf.equal(assignments[x[0]], tf.Variable(0, dtype=tf.int32)))],
+        [ds.filter(lambda x, label: tf.equal(label, 0)),
+         ds.filter(lambda x, label: tf.equal(label, 0))],
         tf.data.Dataset.range(2).repeat())
 
 
@@ -192,13 +192,14 @@ def create_mnist_dataset(batch_size, split, sess_curr, assignments_curr) -> Tupl
     def gen():
         for image, label, img_id in zip(images, labels, img_ids):
             # assignment = sess.run(assignments_curr[img_id // 100])
-            yield ((img_id, image), label)
+            assignment = assignments_curr[img_id // 100][0]
+            yield ((img_id, image, label), assignment)
 
     if split == 'train':
         ds = (tf.data.Dataset
          .from_generator(gen,
-            output_types=((tf.int64, tf.uint8), tf.uint8),
-            output_shapes=(((1,), (28, 28, 1)), (1,))))
+            output_types=((tf.int64, tf.uint8, tf.uint8), tf.int32),
+            output_shapes=((tf.TensorShape([]), (28, 28, 1), (1,)), tf.TensorShape([]))))
         temp = ds.apply(lambda assignments: split_and_merge(assignments_curr, ds))
         batch = (temp.batch(batch_size)
          .map(transform_train))
