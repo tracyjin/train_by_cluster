@@ -54,17 +54,26 @@ def model_fn(features, labels, mode, params):
 def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+    # sess = tf.InteractiveSession()
     sess.__enter__()
     work_dir.mkdir(exist_ok=True, parents=True)
-    # global assignments
-    assignments = {}
+    global assignments
+    assignments = tf.contrib.lookup.MutableHashTable(key_dtype=tf.int32, value_dtype=tf.int32, default_value=-1)
+    # assignments = {}
     for i in range(600):
         if i <= 300:
             # print(type(tf.constant(0, dtype=tf.int32)))
-            assignments[i] = tf.constant(0, dtype=tf.int32)
+            # assignments[i] = tf.constant(0, dtype=tf.int32)
+            key = tf.constant(i, dtype=tf.int32)
+            value = tf.constant(0, dtype=tf.int32)
+            sess.run(assignments.insert(key, value))
         else:
-            assignments[i] = tf.constant(1, dtype=tf.int32)
-
+            # assignments[i] = tf.constant(1, dtype=tf.int32)
+            key = tf.constant(i, dtype=tf.int32)
+            value = tf.constant(1, dtype=tf.int32)
+            sess.run(assignments.insert(key, value))
+    # assignments = tf.contrib.lookup.HashTable(tf.contrib.lookup.KeyValueTensorInitializer(keys, vals),-1)
+    # assignments.init.run()
     # create datasets for training and evaluation
     train_ds, train_size = create_mnist_dataset(batch_size, 'train', sess, assignments)
     print("finish train")
@@ -74,8 +83,9 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
     # iterator: tf.data.Iterator = tf.data.Iterator.from_structure(train_ds.output_types, train_ds.output_shapes)
     iterator = train_ds.make_initializable_iterator()
     next_batch = iterator.get_next()
-    img_ids, images, labels = next_batch[0]
-    batch_assignments = next_batch[1]
+    img_ids, images = next_batch[0]
+    labels = next_batch[1]
+    # batch_assignments = next_batch[1]
     # batch_assignments = next_batch[1]
 
     print(img_ids.shape)
@@ -134,11 +144,23 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
         count = 0
         while True:
             if count == 10:
-                for i in range(60000):
-                    if i <= 30000:
-                        sess.run(assignments[i].assign(1))
+                for i in range(600):
+                    if i <= 300:
+                        # print(type(tf.constant(0, dtype=tf.int32)))
+                        # assignments[i] = tf.constant(0, dtype=tf.int32)
+                        key = tf.constant(i, dtype=tf.int32)
+                        value = tf.constant(1, dtype=tf.int32)
+                        sess.run(assignments.insert(key, value))
                     else:
-                        sess.run(assignments[i].assign(0))
+                        # assignments[i] = tf.constant(1, dtype=tf.int32)
+                        key = tf.constant(i, dtype=tf.int32)
+                        value = tf.constant(0, dtype=tf.int32)
+                        sess.run(assignments.insert(key, value))
+                # for i in range(600):
+                #     if i <= 300:
+                #         sess.run(assignments[i].assign(1))
+                #     else:
+                #         sess.run(assignments[i].assign(0))
                 # sess.run(iterator.make_initializer(ds))
             # if count == 20:
             #     for i in range(600):
@@ -150,8 +172,8 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
             if count >= 30:
                 raise
             try:
-                print(sess.run(assignments[0]))
-                print(sess.run(assignments[400]))
+                print(sess.run(assignments.lookup(tf.constant(0))))
+                print(sess.run(assignments.lookup(tf.constant(400))))
                 # raise
                 # run train iteration
                 # print("166")
