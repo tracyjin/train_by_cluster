@@ -169,12 +169,12 @@ def gen():
         yield ((np.random.uniform(), label), assignment)
 
 
-def split_and_merge(assignments, ds):
+def split_and_merge(ds):
     print("type: ", type(ds))
     print("ds: ", ds)
 
     return tf.contrib.data.choose_from_datasets(
-        [ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 0)),
+        [ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 1)),
          ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 0))],
         tf.data.Dataset.range(2).repeat())
 
@@ -186,10 +186,12 @@ def create_mnist_dataset(batch_size, split, sess_curr, assignments_curr) -> Tupl
     This function create the correct tf.data.Dataset for a given split, transforms and
     batch inputs.
     """
-
+    global assignments
+    assignments = assignments_curr
     images = read_mnist_images(split)
     labels = read_mnist_labels(split)
     img_ids = np.arange(len(images))
+    print(len(img_ids))
 
     def gen():
         for image, label, img_id in zip(images, labels, img_ids):
@@ -202,7 +204,7 @@ def create_mnist_dataset(batch_size, split, sess_curr, assignments_curr) -> Tupl
          .from_generator(gen,
             output_types=((tf.int32, tf.uint8), tf.uint8),
             output_shapes=((tf.TensorShape([]), (28, 28, 1)), (1,))))
-        temp = ds.apply(lambda assignments: split_and_merge(assignments_curr, ds))
+        temp = ds.apply(split_and_merge)
         batch = (temp.batch(batch_size)
          .map(transform_train))
          

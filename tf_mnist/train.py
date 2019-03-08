@@ -67,6 +67,7 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
             key = tf.constant(i, dtype=tf.int32)
             value = tf.constant(0, dtype=tf.int32)
             sess.run(assignments.insert(key, value))
+            # assignments.insert(key, value)
         else:
             # assignments[i] = tf.constant(1, dtype=tf.int32)
             key = tf.constant(i, dtype=tf.int32)
@@ -131,7 +132,8 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
     for epoch in range(1, epochs + 1):
 
         # initialize iterator for train dataset. Shuffle dataset first
-        ds = train_ds.shuffle(128, seed=random.randint(0, 1024))
+        # ds = train_ds.shuffle(128, seed=random.randint(0, 1024))
+        ds = train_ds
         sess.run(iterator.make_initializer(ds))
         # zero-out metrics, they're kept in the local variables collection
         sess.run(tf.local_variables_initializer())
@@ -161,7 +163,7 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
                 #         sess.run(assignments[i].assign(1))
                 #     else:
                 #         sess.run(assignments[i].assign(0))
-                # sess.run(iterator.make_initializer(ds))
+                sess.run(iterator.make_initializer(ds))
             # if count == 20:
             #     for i in range(600):
             #         if i <= 300:
@@ -172,7 +174,8 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
             if count >= 30:
                 raise
             try:
-                print(sess.run(assignments.lookup(tf.constant(0))))
+                print(assignments.size().eval())
+                print(sess.run(assignments.lookup(tf.constant(146))))
                 print(sess.run(assignments.lookup(tf.constant(400))))
                 # raise
                 # run train iteration
