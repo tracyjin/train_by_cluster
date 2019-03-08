@@ -160,20 +160,26 @@ def transform_val(pairs, labels):
     return ((pairs[0], images), labels)
 
 
-# def gen():
-#     # generate random (value, label) pairs
-#     while True:
-#         label = np.random.randint(0, 4)
-#         # assignment = np.random.randint(0, 2)
-#         assignment = sess.run(assignments[label])
-#         yield ((np.random.uniform(), label), assignment)
+def gen():
+    # generate random (value, label) pairs
+    while True:
+        label = np.random.randint(0, 4)
+        # assignment = np.random.randint(0, 2)
+        assignment = sess.run(assignments[label])
+        yield ((np.random.uniform(), label), assignment)
 
 
 def split_and_merge(assignments, ds):
-    print(ds)
+    print("type: ", type(ds))
+    print("ds: ", ds)
+
     return tf.contrib.data.choose_from_datasets(
-        [ds.filter(lambda x, label: tf.equal(assignments[x[0]], tf.Variable(0, dtype=tf.int32))),
-         ds.filter(lambda x, label: tf.equal(assignments[x[0]], tf.Variable(0, dtype=tf.int32)))],
+        # [ds.filter(lambda x, label: tf.equal(assignments[sess.run(tf.to_int64(x[0]))], tf.Variable(0, dtype=tf.int32))),
+         # ds.filter(lambda x, label: tf.equal(assignments[sess.run(tf.to_int64(x[0]))], tf.Variable(0, dtype=tf.int32)))],
+        [ds.filter(lambda x, label: tf.equal(assignments[tf.to_int64(x[0])], tf.Variable(0, dtype=tf.int32))),
+        ds.filter(lambda x, label: tf.equal(assignments[tf.to_int64(x[0])], tf.Variable(0, dtype=tf.int32)))],
+        # [ds.filter(lambda x, label: tf.equal(tf.get_variable(tf.to_int64(x[0])).eval(session=sess), tf.Variable(0, dtype=tf.int32))),
+        # ds.filter(lambda x, label: tf.equal(tf.get_variable(tf.to_int64(x[0])).eval(session=sess), tf.Variable(0, dtype=tf.int32)))],
         tf.data.Dataset.range(2).repeat())
 
 
@@ -199,7 +205,7 @@ def create_mnist_dataset(batch_size, split, sess_curr, assignments_curr) -> Tupl
          .from_generator(gen,
             output_types=((tf.int64, tf.uint8), tf.uint8),
             output_shapes=(((1,), (28, 28, 1)), (1,))))
-        temp = ds.apply(lambda assignments: split_and_merge(assignments_curr, ds))
+        temp = ds.apply(lambda assignments: split_and_merge(assignments_curr, ds, sess_curr))
         batch = (temp.batch(batch_size)
          .map(transform_train))
          
@@ -215,24 +221,45 @@ def create_mnist_dataset(batch_size, split, sess_curr, assignments_curr) -> Tupl
         return batch, len(labels)
 
 
-# if __name__ == "__main__":
-#     global assignments
-#     assignments = {}
-#     for i in range(4):
-#         assignments[i] = tf.Variable(np.random.randint(0, 2), dtype=tf.int32)
+if __name__ == "__main__":
+    global assignments
+    sess = tf.InteractiveSession()
 
-#     # Can't pass assignments as an argument to gen, otherwise it will be
-#     # evaluated and passed to generator as NumPy-array arguments
-#     batch = (tf.data.Dataset
-#          .from_generator(gen,
-#             output_types=((tf.float32, tf.int32), tf.int32),
-#             output_shapes=((tf.TensorShape([]), tf.TensorShape([])), tf.TensorShape([])))
-#          .apply(split_and_merge)
-#          .batch(2)
-#          .make_one_shot_iterator()
-#          .get_next())
+    # assignments = {}
+    # table = tf.contrib.lookup.MutableHashTable(key_dtype=tf.int64, value_dtype=tf.Variable, default_value=-1, empty_key=0)
+    # table = tf.contrib.lookup.MutableDenseHashTable(key_dtype=tf.int64, value_dtype=tf.Variable, default_value=-1, empty_key=0)
+    keys = tf.constant([0, 1, 2, 3], dtype=tf.int64)
+    # assignments = []
+    vals = []
+    for i in range(4):
+        # assignments.append(tf.Variable(np.random.randint(0, 2), dtype=tf.int32))
+        vals.append(tf.Variable(np.random.randint(0, 2), dtype=tf.int32))
+    vals = tf.constant([vals], dtype=tf.Variable)
 
-#     sess = tf.InteractiveSession()
-#     sess.run(tf.global_variables_initializer())
-#     for _ in range(5):
-#         print(sess.run(batch))
+    sess.run(tf.global_variables_initializer())
+    table = tf.contrib.lookup.HashTable(tf.contrib.lookup.KeyValueTensorInitializer(keys, vals),-1)
+    table.init.run()
+    print("run")
+    print(sess.run(table.lookup(tf.range(4, dtype=tf.int64))))
+
+    # insert_op = table.insert(keys, vals)
+    # sess.run(insert_op)
+
+    #  print(sess.run(table.lookup(keys)))
+
+    # Can't pass assignments as an argument to gen, otherwise it will be
+    # evaluated and passed to generator as NumPy-array arguments
+    # batch = (tf.data.Dataset
+    #      .from_generator(gen,
+    #         output_types=((tf.float32, tf.int32), tf.int32),
+    #         output_shapes=((tf.TensorShape([]), tf.TensorShape([])), tf.TensorShape([])))
+    #      .apply(split_and_merge)
+    #      .batch(2)
+    #      .make_one_shot_iterator()
+    #      .get_next())
+
+
+    # sess = tf.InteractiveSession()
+    # sess.run(tf.global_variables_initializer())
+    # for _ in range(5):
+    #     print(sess.run(batch))
