@@ -60,19 +60,25 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
     global assignments
     assignments = tf.contrib.lookup.MutableHashTable(key_dtype=tf.int32, value_dtype=tf.int32, default_value=-1)
     # assignments = {}
+    keys = []
+    values = []
     for i in range(600):
         if i <= 300:
             # print(type(tf.constant(0, dtype=tf.int32)))
             # assignments[i] = tf.constant(0, dtype=tf.int32)
-            key = tf.constant(i, dtype=tf.int32)
-            value = tf.constant(0, dtype=tf.int32)
-            sess.run(assignments.insert(key, value))
-            # assignments.insert(key, value)
+            # key = tf.constant(i, dtype=tf.int32)
+            # value = tf.constant(0, dtype=tf.int32)
+            # sess.run(assignments.insert(key, value))
+            keys.append(tf.constant(i, dtype=tf.int32))
+            values.append(tf.constant(0, dtype=tf.int32))
         else:
             # assignments[i] = tf.constant(1, dtype=tf.int32)
-            key = tf.constant(i, dtype=tf.int32)
-            value = tf.constant(1, dtype=tf.int32)
-            sess.run(assignments.insert(key, value))
+            # key = tf.constant(i, dtype=tf.int32)
+            # value = tf.constant(1, dtype=tf.int32)
+            # sess.run(assignments.insert(key, value))
+            keys.append(tf.constant(i, dtype=tf.int32))
+            values.append(tf.constant(1, dtype=tf.int32))
+    sess.run(assignments.insert(keys, values))
     # assignments = tf.contrib.lookup.HashTable(tf.contrib.lookup.KeyValueTensorInitializer(keys, vals),-1)
     # assignments.init.run()
     # create datasets for training and evaluation
@@ -174,9 +180,9 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
             if count >= 30:
                 raise
             try:
-                print(assignments.size().eval())
-                print(sess.run(assignments.lookup(tf.constant(146))))
-                print(sess.run(assignments.lookup(tf.constant(400))))
+                print("assignments.size(): ", assignments.size().eval())
+                print("assignments.lookup(tf.constant(146)): ", sess.run(assignments.lookup(tf.constant(146))))
+                print("assignments.lookup(tf.constant(400)): ", sess.run(assignments.lookup(tf.constant(400))))
                 # raise
                 # run train iteration
                 # print("166")
