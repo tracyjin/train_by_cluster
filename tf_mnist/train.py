@@ -69,15 +69,16 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
             # key = tf.constant(i, dtype=tf.int32)
             # value = tf.constant(0, dtype=tf.int32)
             # sess.run(assignments.insert(key, value))
-            keys.append(tf.constant(i, dtype=tf.int32))
-            values.append(tf.constant(0, dtype=tf.int32))
+            keys.append(tf.Variable(i, dtype=tf.int32))
+            values.append(tf.Variable(0, dtype=tf.int32))
         else:
             # assignments[i] = tf.constant(1, dtype=tf.int32)
             # key = tf.constant(i, dtype=tf.int32)
             # value = tf.constant(1, dtype=tf.int32)
             # sess.run(assignments.insert(key, value))
-            keys.append(tf.constant(i, dtype=tf.int32))
-            values.append(tf.constant(1, dtype=tf.int32))
+            keys.append(tf.Variable(i, dtype=tf.int32))
+            values.append(tf.Variable(1, dtype=tf.int32))
+    sess.run(tf.global_variables_initializer())
     sess.run(assignments.insert(keys, values))
     # assignments = tf.contrib.lookup.HashTable(tf.contrib.lookup.KeyValueTensorInitializer(keys, vals),-1)
     # assignments.init.run()
@@ -154,35 +155,37 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
             if count == 10:
                 for i in range(600):
                     if i <= 300:
-                        # print(type(tf.constant(0, dtype=tf.int32)))
-                        # assignments[i] = tf.constant(0, dtype=tf.int32)
-                        key = tf.constant(i, dtype=tf.int32)
-                        value = tf.constant(1, dtype=tf.int32)
-                        sess.run(assignments.insert(key, value))
+                        # print("lookup key: ", sess.run(assignments.lookup(keys[i])))
+                        # key = tf.constant(i, dtype=tf.int32)
+                        # value = tf.Variable(1, dtype=tf.int32)
+                        # sess.run(assignments.insert(keys[i], value))
+                        sess.run(tf.assign(values[i], 1))
                     else:
-                        # assignments[i] = tf.constant(1, dtype=tf.int32)
-                        key = tf.constant(i, dtype=tf.int32)
-                        value = tf.constant(0, dtype=tf.int32)
-                        sess.run(assignments.insert(key, value))
+                        # key = tf.constant(i, dtype=tf.int32)
+                        # value = tf.Variable(0, dtype=tf.int32)
+                        # sess.run(assignments.insert(keys[i], value))
+                        sess.run(tf.assign(values[i], 0))
                 # for i in range(600):
                 #     if i <= 300:
                 #         sess.run(assignments[i].assign(1))
                 #     else:
                 #         sess.run(assignments[i].assign(0))
-                sess.run(iterator.make_initializer(ds))
+                sess.run(assignments.insert(keys, values))
+                # sess.run(iterator.make_initializer(ds))
             # if count == 20:
             #     for i in range(600):
             #         if i <= 300:
             #             sess.run(assignments[i].assign(0))
             #         else:
             #             sess.run(assignments[i].assign(1))
-            #     sess.run(iterator.make_initializer(ds))
+                # sess.run(iterator.make_initializer(ds))
             if count >= 30:
                 raise
             try:
-                print("assignments.size(): ", assignments.size().eval())
-                print("assignments.lookup(tf.constant(146)): ", sess.run(assignments.lookup(tf.constant(146))))
-                print("assignments.lookup(tf.constant(400)): ", sess.run(assignments.lookup(tf.constant(400))))
+                print("count: ", count)
+                # print("assignments.size(): ", assignments.size().eval())
+                print("assignments.lookup(keys[146]): ", sess.run(assignments.lookup(keys[146])))
+                print("assignments.lookup(keys[400]): ", sess.run(assignments.lookup(keys[400])))
                 # raise
                 # run train iteration
                 # print("166")
