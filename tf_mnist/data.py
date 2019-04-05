@@ -178,7 +178,7 @@ def split_and_merge(ds):
     #     [ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 1)),
     #      ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 0))],
     #     tf.data.Dataset.range(2).repeat())
-    t1 = [ds.filter(lambda x, label: tf.equal(tf.Print(assignments.lookup(x[0] // 100), [assignments.lookup(x[0] // 100)]), 1)),d
+    t1 = [ds.filter(lambda x, label: tf.equal(tf.Print(assignments.lookup(x[0] // 100), [assignments.lookup(x[0] // 100)]), 1)),
         ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 0))]
     t2 = tf.data.Dataset.range(2).repeat()
 

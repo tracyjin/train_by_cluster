@@ -171,7 +171,7 @@ def do_train(work_dir: Path, epochs: int, batch_size=2, **kwargs):
                 #     else:
                 #         sess.run(assignments[i].assign(0))
                 sess.run(assignments.insert(keys, values))
-                # sess.run(iterator.make_initializer(ds))
+                sess.run(iterator.make_initializer(ds))
             # if count == 20:
             #     for i in range(600):
             #         if i <= 300:
