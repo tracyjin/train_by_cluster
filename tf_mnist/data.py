@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Tuple
-
+import sys
 import requests
 from urllib.parse import urlparse
 from hashlib import md5
@@ -172,11 +172,18 @@ def gen():
 def split_and_merge(ds):
     print("type: ", type(ds))
     print("ds: ", ds)
+    # ds = tf.Print(ds, tf.shape(ds), message="tf.print: ")
 
-    return tf.contrib.data.choose_from_datasets(
-        [ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 1)),
-         ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 0))],
-        tf.data.Dataset.range(2).repeat())
+    # return tf.contrib.data.choose_from_datasets(
+    #     [ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 1)),
+    #      ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 0))],
+    #     tf.data.Dataset.range(2).repeat())
+    t1 = [ds.filter(lambda x, label: tf.equal(tf.Print(assignments.lookup(x[0] // 100), [assignments.lookup(x[0] // 100)]), 1)),d
+        ds.filter(lambda x, label: tf.equal(assignments.lookup(x[0] // 100), 0))]
+    t2 = tf.data.Dataset.range(2).repeat()
+
+    temp = tf.contrib.data.choose_from_datasets(t1, t2)
+    return temp
 
 
 def create_mnist_dataset(batch_size, split, sess_curr, assignments_curr) -> Tuple[tf.data.Dataset, int]:
@@ -205,8 +212,10 @@ def create_mnist_dataset(batch_size, split, sess_curr, assignments_curr) -> Tupl
             output_types=((tf.int32, tf.uint8), tf.uint8),
             output_shapes=((tf.TensorShape([]), (28, 28, 1)), (1,))))
         temp = ds.apply(split_and_merge)
+        tf.print("tf.print: ", temp, output_stream=sys.stdout)
         batch = (temp.batch(batch_size)
-         .map(transform_train))
+         .map(transform_train)
+        .repeat())
          
         return batch, len(labels)
     elif split == 'val':
@@ -216,7 +225,8 @@ def create_mnist_dataset(batch_size, split, sess_curr, assignments_curr) -> Tupl
             output_shapes=((tf.TensorShape([]), (28, 28, 1)), (1,)))
          # .apply(split_and_merge)
          .batch(batch_size)
-         .map(transform_val))
+         .map(transform_val)
+         .repeat())
         return batch, len(labels)
 
 
